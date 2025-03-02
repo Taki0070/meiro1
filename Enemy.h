@@ -2,7 +2,6 @@
 #include "./Engine/GameObject.h"
 #include "./globals.h"
 
-
 class Enemy :
     public GameObject
 {
@@ -18,7 +17,8 @@ public:
     Enemy();
     ~Enemy();
 
-
+    void Bfs();
+    void Dfs();
     void Update() override;
     void Draw() override;
     void XCloserMove();
