@@ -21,10 +21,13 @@ public:
 
     void Update() override;
     void Draw() override;
-    void XCloserMove();
+  /*  void XCloserMove();
     void YCloserMove();
-    void XYCloserMove();
+    void XYCloserMove();*/
+
+    void MOVE(Point p);
     void RightPointMove();
     bool CheckHit(const Rect& me, const Rect& other);
+    bool HitChip(int x, int y);
 };
 

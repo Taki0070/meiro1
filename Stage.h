@@ -18,7 +18,10 @@ class Stage :
     public GameObject
 {
 	vector<vector<STAGE_OBJ>> stageData;
+	vector<vector<int>> stageDataSearch;
 	vector<Rect> stageRects;
+	const Point dirs[4]{ {0,1},{0,-1},{1,0},{-1,0} };
+
 public:
 	Stage();
 	~Stage();
@@ -28,5 +31,11 @@ public:
 	vector<Rect> GetStageRects() { return stageRects; }
 	vector<vector<STAGE_OBJ>>& GetStageGrid() { return stageData; }
 	void setStageRects();
+
+	void BFS(Point Start, Point Goal);
+	void Dijkstra(std::pair<int, int> sp);
+
+	vector<Point> restore(int tx, int ty);
+	vector<Point> restore(Point start, Point goal);
 };
 

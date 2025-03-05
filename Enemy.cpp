@@ -2,7 +2,10 @@
 #include "./Stage.h"
 #include "globals.h"
 #include"Player.h"
+#include<vector>
 
+
+std::vector<Point> route_;
 namespace
 {
 	Point nDir[4] = { {0,-2},{0,2},{-2,0},{2,0} };//移動方向
@@ -29,45 +32,40 @@ Enemy::~Enemy()
 
 void Enemy::Update()
 {
+	Player* player = (Player*)FindGameObject<Player>();
+	Point pPos = player->GetPos();
+	Stage* stage = (Stage*)FindGameObject<Stage>();
 	static bool stop = false;
 
 	if (!stop) {
-		Point op = pos_;
-		Point move = { nDir[forward_].x, nDir[forward_].y };
-		Rect eRect = { pos_.x, pos_.y,CHA_WIDTH, CHA_HEIGHT };
-		Stage* stage = (Stage*)FindGameObject<Stage>();
-		pos_ = { pos_.x + move.x, pos_.y + move.y };
-		for (auto& obj : stage->GetStageRects())
+		int ex = pos_.x / CHA_WIDTH;
+		int ey = pos_.y / CHA_HEIGHT;
+
+		int px = pPos.x / CHA_WIDTH;
+		int py = pPos.y / CHA_HEIGHT;
+
+
+		//幅優先探索
+		stage->BFS({ ex,ey }, { px,py });
+		route_ = stage->restore({ ex,ey }, { px,py });
+
+		stop = true;
+	}
+
+
+	if (!route_.empty()) 
+	{
+		// ターゲット移動
+		Point nextTarget = route_.front();
+		MOVE(nextTarget);
+
+		if (pos_.x == nextTarget.x * CHA_WIDTH && pos_.y == nextTarget.y * CHA_HEIGHT)
 		{
-			if (CheckHit(eRect, obj)) {
-				Rect tmpRectX = { op.x, pos_.y, CHA_WIDTH, CHA_HEIGHT };
-				Rect tmpRecty = { pos_.x, op.y, CHA_WIDTH, CHA_HEIGHT };
-				if (!CheckHit(tmpRectX, obj))
-				{
-					pos_.x = op.x;
-				}
-				else if (!CheckHit(tmpRecty, obj))
-				{
-					pos_.y = op.y;
-				}
-				else
-				{
-					pos_ = op;
-				}
-				forward_ = (DIR)(GetRand(3));
-				break;
-			}
+			route_.erase(route_.begin()); 
 		}
 	}
-	int prgssx = pos_.x % (CHA_WIDTH);//キャラサイズで割り、後で方向を決める
-	int prgssy = pos_.y % (CHA_HEIGHT);
-	int cx = (pos_.x / (CHA_WIDTH))%2;//上とはとる座標が違う
-	int cy = (pos_.y / (CHA_HEIGHT))%2;
-	if (prgssx == 0 && prgssy == 0 && cx && cy)//きれいに割り切れているとき
-	{
-		//forward_ = (DIR)(GetRand(3));//方向
-		XYCloserMove();
-		//RightPointMove();
+	else {
+		stop = false;
 	}
 
 }
@@ -86,59 +84,36 @@ void Enemy::Draw()
 	DrawTriangle(tp[forward_][0].x, tp[forward_][0].y, tp[forward_][1].x, tp[forward_][1].y, tp[forward_][2].x, tp[forward_][2].y, GetColor(255,255,255), TRUE);
 }
 
-void Enemy::XCloserMove()//x方向だけついてくる
-{
-	Player* pPos = (Player*)FindGameObject < Player > ();	
-	if (pos_.x > pPos->GetPos().x)
-	{
-		forward_ = LEFT;
-	}
-	if(pos_.x < pPos->GetPos().x) {
-		forward_ = RIGHT;
-	}
-}
 
-void Enemy::YCloserMove()
-{
-	Player* pPos = (Player*)FindGameObject < Player >();
-	if (pos_.y > pPos->GetPos().y)
-	{
-		forward_ = UP;
-	}
-	if (pos_.y < pPos->GetPos().y) {
-		forward_ = DOWN;
-	}
-}
 
-void Enemy::XYCloserMove()
+void Enemy::MOVE(Point p)
 {
-	Player* pPos = (Player*)FindGameObject < Player >();
-	int xDis = pos_.x - pPos->GetPos().x;
-	int yDis = pos_.y - pPos->GetPos().y;
-	
-	if (rand() % 2 == 0)
+	int dx = p.x * CHA_WIDTH;
+	int dy = p.y * CHA_HEIGHT;
+
+	//移動量を計算
+	if (pos_.x != dx)
 	{
-		if (xDis > yDis)
-		{
-			if (pos_.x > pPos->GetPos().x)
-			{
-				forward_ = LEFT;
-			}
-			else if (pos_.x < pPos->GetPos().x) {
-				forward_ = RIGHT;
-			}
+		if (dx > pos_.x) {
+			pos_.x += 2;
+			forward_ = RIGHT;
 		}
-		else if (xDis < yDis)
-		{
-			if (pos_.y > pPos->GetPos().y)
-			{
-				forward_ = UP;
-			}
-			if (pos_.y < pPos->GetPos().y) {
-				forward_ = DOWN;
-			}
+		else {
+			pos_.x -= 2;
+			forward_ = LEFT;
 		}
+	}
 
+	else if (pos_.y != dy) 
+	{
+		if (dy > pos_.y) {
+			pos_.y +=  2;
+			forward_ = DOWN;
+		}
+		else {
+			pos_.y -= 2;
+			forward_ = UP;
+		}
 	}
 }
 
@@ -186,6 +161,22 @@ bool Enemy::CheckHit(const Rect& me, const Rect& other)
 		me.y + me.h > other.y)
 	{
 		return true;
+	}
+	return false;
+}
+
+
+bool Enemy::HitChip(int x, int y)
+{
+	Rect me = { x,y,CHA_WIDTH,CHA_HEIGHT };
+
+	Stage* stage = (Stage*)FindGameObject<Stage>();
+	for (auto& obj : stage->GetStageRects())
+	{
+		if (CheckHit(me, obj))
+		{
+			return true;
+		}
 	}
 	return false;
 }

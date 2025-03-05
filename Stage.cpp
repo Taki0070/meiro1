@@ -1,6 +1,13 @@
 #include "Stage.h"
 #include "./globals.h"
+#include<time.h>
 #include<stack>
+#include<queue>
+#include<map>
+
+
+std::queue<std::pair<Point, int>>myQueue;
+
 namespace {
 	std::stack<Point> prStack;
 
@@ -81,6 +88,7 @@ namespace {
 Stage::Stage()
 {
 	stageData = vector(STAGE_HEIGHT, vector<STAGE_OBJ>(STAGE_WIDTH, STAGE_OBJ::EMPTY));
+	stageDataSearch = vector(STAGE_HEIGHT, vector<int>(STAGE_WIDTH, 0));
 
 	for (int y = 0; y < STAGE_HEIGHT; y++)
 	{
@@ -100,8 +108,8 @@ Stage::Stage()
 
 		}
 	}
-
-	//MakeMazeDigDug(STAGE_WIDTH, STAGE_HEIGHT, stageData);
+	srand((unsigned)time(NULL));
+	MakeMazeDigDug(STAGE_WIDTH, STAGE_HEIGHT, stageData);
 	setStageRects();
 }
 
@@ -150,4 +158,87 @@ void Stage::setStageRects()
 		}
 	}
 
+}
+
+vector<vector<int>> Dist(STAGE_HEIGHT, vector<int>(STAGE_WIDTH, INT_MAX));
+vector<vector<Point>> pre(STAGE_HEIGHT, vector<Point>(STAGE_WIDTH, { -1,-1 }));
+vector<vector<bool>> visited(STAGE_WIDTH, vector<bool>(STAGE_HEIGHT, false));
+
+
+void Stage::BFS(Point Start, Point Goal)
+{
+	//探索用
+	Point np[4]{ {0,-1},{1,0},{0,1},{-1,0} };
+	int step = 0;
+	myQueue.push({ Start,step });
+
+	stageDataSearch[Start.y][Start.x] = step;
+
+	while (!myQueue.empty())
+	{
+		std::pair<Point, int> Crr = myQueue.front();
+		myQueue.pop();
+
+		//4マスを探索
+		for (int i = 0; i < 4; i++) {
+			Point tmp = { Crr.first.x + np[i].x,Crr.first.y + np[i].y };
+			if (tmp.x == 0 || tmp.x == STAGE_WIDTH - 1 ||
+				tmp.y == 0 || tmp.y == STAGE_HEIGHT - 1)
+				continue;
+
+			//範囲外
+			if (tmp.x < 0 || tmp.x >= STAGE_WIDTH || tmp.y < 0 || tmp.y >= STAGE_HEIGHT)
+				continue;
+
+
+
+			//  訪問
+			if (visited[tmp.x][tmp.y]) {
+				continue;
+			}
+
+			if (stageData[tmp.y][tmp.x] == STAGE_OBJ::EMPTY) {
+				stageDataSearch[tmp.y][tmp.x] = Crr.second + 1;
+				pre[tmp.y][tmp.x] = Crr.first;  //	記録
+				myQueue.push({ tmp,stageDataSearch[tmp.y][tmp.x] });
+				visited[tmp.x][tmp.y] = true;
+			}
+
+		}
+	}
+}
+
+void Stage::Dijkstra(std::pair<int, int> sp)
+{
+}
+
+vector<Point> Stage::restore(int tx, int ty)
+{
+	vector<Point> path;
+	int x = tx;
+	int y = ty;
+	for (; tx != -1 || ty != -1; tx = pre[y][x].x, ty = pre[y][x].y) {
+		path.push_back(Point{ tx, ty });
+		x = (int)tx, y = (int)ty;
+	}
+	reverse(path.begin(), path.end());
+
+	return path;
+}
+
+vector<Point> Stage::restore(Point start, Point goal)
+{
+	vector<Point> path;
+	Point current = goal;
+
+	//ゴールからスタートまでノードをたどる
+
+	while (current.x != start.x || current.y != start.y) {
+		path.push_back(current);
+		current = pre[current.y][current.x];
+	}
+	path.push_back(start);
+	reverse(path.begin(), path.end());
+
+	return path;
 }
