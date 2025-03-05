@@ -208,10 +208,38 @@ void Stage::BFS(Point Start, Point Goal)
 	}
 }
 
+using vec = std::pair<int, int>;
+using Mdat = std::pair<int, vec>;
+
+
 void Stage::Dijkstra(std::pair<int, int> sp)
 {
-}
+	Dist[sp.second][sp.first] = 0;
+	std::priority_queue<Mdat, std::vector<Mdat>, std::greater<Mdat>> pq;
+	pq.push(Mdat(0, { sp.first,sp.second }));
 
+	
+
+	while (!pq.empty())
+	{
+		Mdat p = pq.top();
+		pq.pop();
+
+		int c = p.first;
+		vec v = p.second;
+
+		for (int i = 0; i < 4; i++)
+		{
+			vec np = { v.first + (int)dirs[i].x,v.second + (int)dirs[i].y };
+			if (np.first < 0 || np.second < 0 || np.first >= STAGE_WIDTH || np.second >= STAGE_HEIGHT) continue;
+			if (stageData[np.second][np.first] == STAGE_OBJ::WALL) continue;
+			if (Dist[np.second][np.first] <= 1 + c) continue;
+			Dist[np.second][np.first] = 1 + c;
+			pre[np.second][np.first] = Point{ v.first, v.second };
+			pq.push(Mdat(Dist[np.second][np.first], np));
+		}
+	}
+}
 vector<Point> Stage::restore(int tx, int ty)
 {
 	vector<Point> path;

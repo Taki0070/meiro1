@@ -44,10 +44,13 @@ void Enemy::Update()
 		int px = pPos.x / CHA_WIDTH;
 		int py = pPos.y / CHA_HEIGHT;
 
+		////•—Dæ’Tõ
+		//stage->BFS({ ex,ey }, { px,py });
+		//route_ = stage->restore({ ex,ey }, { px,py });
 
-		//•—Dæ’Tõ
-		stage->BFS({ ex,ey }, { px,py });
-		route_ = stage->restore({ ex,ey }, { px,py });
+		//ƒ_ƒCƒNƒXƒgƒ‰
+		stage->Dijkstra({ ex, ey });
+		route_ = stage->restore(px, py);
 
 		stop = true;
 	}
